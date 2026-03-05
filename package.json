@@ -1,0 +1,12 @@
+{
+  "name": "@cef-ai/github-action",
+  "version": "1.0.0",
+  "description": "Thin GitHub Action that sends PR events to a CEF agent service via Cere DDC",
+  "type": "module",
+  "main": "index.mjs",
+  "license": "MIT",
+  "dependencies": {
+    "@cere-ddc-sdk/client": "latest",
+    "@fails-components/webtransport": "latest"
+  }
+}

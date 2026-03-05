@@ -1,0 +1,65 @@
+name: "CEF PR Event"
+description: "Send GitHub PR events to a CEF agent service for processing"
+branding:
+  icon: "send"
+  color: "blue"
+
+inputs:
+  wallet_uri:
+    description: "CEF wallet URI (Ed25519 signer)"
+    required: true
+  ddc_base_url:
+    description: "DDC Base URL"
+    required: true
+  agent_service:
+    description: "Agent service public key"
+    required: true
+  workspace:
+    description: "Workspace ID"
+    required: true
+  stream:
+    description: "Stream ID"
+    required: false
+    default: ""
+  event_type:
+    description: "CEF event type identifier"
+    required: false
+    default: "GITHUB_ACTION_PR_EVENT"
+  github_token:
+    description: "GitHub token for PR enrichment (fetch files, commits)"
+    required: false
+    default: ${{ github.token }}
+  notion_page_id:
+    description: "Notion page ID for execution log output"
+    required: false
+    default: ""
+  notion_api_key:
+    description: "Notion API key"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+
+    - name: Install dependencies
+      shell: bash
+      run: npm install --prefix ${{ github.action_path }}
+
+    - name: Send PR event to CEF
+      shell: bash
+      env:
+        WALLET_URI: ${{ inputs.wallet_uri }}
+        DDC_BASE_URL: ${{ inputs.ddc_base_url }}
+        AGENT_SERVICE: ${{ inputs.agent_service }}
+        WORKSPACE: ${{ inputs.workspace }}
+        STREAM: ${{ inputs.stream }}
+        EVENT_TYPE: ${{ inputs.event_type }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        NOTION_PAGE_ID: ${{ inputs.notion_page_id }}
+        NOTION_API_KEY: ${{ inputs.notion_api_key }}
+      run: node ${{ github.action_path }}/index.mjs
