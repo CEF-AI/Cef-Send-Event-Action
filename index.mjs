@@ -10,12 +10,13 @@ const require = createRequire(import.meta.url);
 
 // ---- Environment ----
 
-const eventPath    = process.env.GITHUB_EVENT_PATH;
-const repo         = process.env.GITHUB_REPOSITORY;
-const notionPageId = process.env.NOTION_PAGE_ID || '';
-const notionApiKey = process.env.NOTION_API_KEY || '';
-const githubToken  = process.env.GITHUB_TOKEN || '';
-const eventType    = process.env.EVENT_TYPE || 'GITHUB_ACTION_PR_EVENT';
+const eventPath                 = process.env.GITHUB_EVENT_PATH;
+const repo                      = process.env.GITHUB_REPOSITORY;
+const notionApiKey              = process.env.NOTION_API_KEY || '';
+const githubToken               = process.env.GITHUB_TOKEN || '';
+const eventType                 = process.env.EVENT_TYPE || 'GITHUB_ACTION_PR_EVENT';
+const slackProductivityBotToken = process.env.SLACK_PRODUCTIVITY_BOT_TOKEN || '';
+const slackChannelId            = process.env.SLACK_CHANNEL_ID || '';
 
 const ddcBaseUrl   = process.env.DDC_BASE_URL;
 const agentService = process.env.AGENT_SERVICE;
@@ -30,8 +31,9 @@ console.log(`  Agent Service:   ${agentService}`);
 console.log(`  Workspace:       ${workspace}`);
 console.log(`  Stream:          ${stream || '(none)'}`);
 console.log(`  Event Type:      ${eventType}`);
-console.log(`  Notion Page ID:  ${notionPageId || '(none)'}`);
-console.log(`  Notion API Key:  ${notionApiKey ? '***set***' : '(missing!)'}`);
+console.log(`  Notion API Key:              ${notionApiKey ? '***set***' : '(missing!)'}`);
+console.log(`  Slack Bot Token:             ${slackProductivityBotToken ? '***set***' : '(not set)'}`);
+console.log(`  Slack Channel ID:            ${slackChannelId || '(not set)'}`);
 console.log(`  Wallet URI:      ${walletUri ? '***set***' : '(missing!)'}`);
 console.log(`  GitHub Token:    ${githubToken ? '***set***' : '(missing!)'}`);
 
@@ -97,9 +99,11 @@ const payload = {
   base_branch: pr.base?.ref || null,
   before: ghEvent.before || null,
   after: ghEvent.after || pr.head?.sha || null,
-  timestamp: new Date().toISOString(),
-  notion_page_id: notionPageId || null,
+  timestamp: pr.updated_at || pr.created_at || new Date().toISOString(),
   notion_api_key: notionApiKey || null,
+  slack_productivity_bot_token: slackProductivityBotToken || null,
+  slack_channel_id: slackChannelId || null,
+  requested_reviewer: ghEvent.requested_reviewer?.login || null,
   delivery_id: `${repo}#${pr.number}#${Date.now()}`,
   github_token: githubToken || null,
 };

@@ -29,12 +29,16 @@ inputs:
     description: "GitHub token for PR enrichment (fetch files, commits)"
     required: false
     default: ${{ github.token }}
-  notion_page_id:
-    description: "Notion page ID for execution log output"
-    required: false
-    default: ""
   notion_api_key:
     description: "Notion API key"
+    required: false
+    default: ""
+  slack_productivity_bot_token:
+    description: "Slack bot token for review request pings"
+    required: false
+    default: ""
+  slack_channel_id:
+    description: "Slack channel ID to post review pings in"
     required: false
     default: ""
 
@@ -60,6 +64,7 @@ runs:
         STREAM: ${{ inputs.stream }}
         EVENT_TYPE: ${{ inputs.event_type }}
         GITHUB_TOKEN: ${{ inputs.github_token }}
-        NOTION_PAGE_ID: ${{ inputs.notion_page_id }}
         NOTION_API_KEY: ${{ inputs.notion_api_key }}
+        SLACK_PRODUCTIVITY_BOT_TOKEN: ${{ inputs.slack_productivity_bot_token }}
+        SLACK_CHANNEL_ID: ${{ inputs.slack_channel_id }}
       run: node ${{ github.action_path }}/index.mjs
