@@ -1,7 +1,7 @@
 {
   "name": "@cef-ai/github-action",
   "version": "1.0.0",
-  "description": "Thin GitHub Action that sends PR events to a CEF agent service via Cere DDC",
+  "description": "GitHub Action that sends a CEF event with arbitrary type and payload via the SDK",
   "type": "module",
   "main": "index.mjs",
   "license": "MIT",
