@@ -1,11 +1,11 @@
 {
-  "name": "@cef-ai/github-action",
+  "name": "@cef-ai/cef-send-event-action",
   "version": "1.0.0",
-  "description": "GitHub Action that sends a CEF event with arbitrary type and payload via the SDK",
+  "description": "GitHub Action for sending arbitrary CEF events via the client SDK",
   "type": "module",
   "main": "index.mjs",
   "license": "MIT",
   "dependencies": {
-    "@cef-ai/client-sdk": "latest"
+    "@cef-ai/client-sdk": "0.0.11"
   }
 }

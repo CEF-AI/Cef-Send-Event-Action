@@ -4,7 +4,7 @@ import {
   ClientContext,
   ClientSdk,
   UriSigner,
-} from '@cef-ai/client-sdk/index';
+} from '@cef-ai/client-sdk';
 
 globalThis.TextEncoder ??= TextEncoder;
 globalThis.TextDecoder ??= TextDecoder;
