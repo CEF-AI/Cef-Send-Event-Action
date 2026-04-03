@@ -6,7 +6,6 @@
   "main": "index.mjs",
   "license": "MIT",
   "dependencies": {
-    "@cere-ddc-sdk/client": "latest",
-    "@fails-components/webtransport": "latest"
+    "@cef-ai/client-sdk": "latest"
   }
 }

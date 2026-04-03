@@ -9,8 +9,28 @@ inputs:
     description: "CEF wallet URI (Ed25519 signer)"
     required: true
   ddc_base_url:
-    description: "DDC Base URL"
+    description: "CEF orchestrator base URL"
     required: true
+  gar_url:
+    description: "GAR service URL"
+    required: false
+    default: "https://gar.compute.dev.ddcdragon.com/"
+  event_runtime_url:
+    description: "Event runtime URL"
+    required: false
+    default: "https://compute-1.devnet.ddc-dragon.com/event"
+  agent_runtime_url:
+    description: "Agent runtime URL"
+    required: false
+    default: "https://compute-1.devnet.ddc-dragon.com/agent"
+  web_transport_url:
+    description: "WebTransport endpoint URL"
+    required: false
+    default: "https://compute-1.devnet.ddc-dragon.com:4433"
+  sis_url:
+    description: "SIS service URL"
+    required: false
+    default: "https://compute-1.devnet.ddc-dragon.com/sis"
   agent_service:
     description: "Agent service public key"
     required: true
@@ -28,6 +48,10 @@ inputs:
     description: "JSON string for the event body (e.g. from toJSON(github.event) or a custom object)"
     required: false
     default: "{}"
+  agreement_ttl_seconds:
+    description: "Agreement TTL in seconds before sending the event"
+    required: false
+    default: "86400"
 
 runs:
   using: "composite"
@@ -45,10 +69,16 @@ runs:
       shell: bash
       env:
         WALLET_URI: ${{ inputs.wallet_uri }}
-        DDC_BASE_URL: ${{ inputs.ddc_base_url }}
+        BASE_URL: ${{ inputs.ddc_base_url }}
+        GAR_URL: ${{ inputs.gar_url }}
+        EVENT_URL: ${{ inputs.event_runtime_url }}
+        AGENT_RUNTIME_URL: ${{ inputs.agent_runtime_url }}
+        WEB_TRANSPORT_URL: ${{ inputs.web_transport_url }}
+        SIS_URL: ${{ inputs.sis_url }}
         AGENT_SERVICE: ${{ inputs.agent_service }}
         WORKSPACE: ${{ inputs.workspace }}
         STREAM: ${{ inputs.stream }}
         EVENT_TYPE: ${{ inputs.event_type }}
         EVENT_PAYLOAD: ${{ inputs.event_payload }}
+        AGREEMENT_TTL_SECONDS: ${{ inputs.agreement_ttl_seconds }}
       run: node ${{ github.action_path }}/index.mjs
