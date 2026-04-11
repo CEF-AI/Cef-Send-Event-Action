@@ -1,7 +1,5 @@
 # CEF Send Event (GitHub Action)
 
-A composite GitHub Action that connects to the [CEF (Cere Edge Framework)](https://cef.ai) stack via `@cef-ai/client-sdk` and sends a single event with an arbitrary type and JSON payload. Use it from any workflow (PR, push, schedule, manual) to trigger CEF agents.
-
 ## What It Does
 
 1. Builds a secured `ClientSdk` with explicit runtime URLs.
