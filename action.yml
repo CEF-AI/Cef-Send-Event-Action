@@ -14,23 +14,23 @@ inputs:
   gar_url:
     description: "GAR service URL"
     required: false
-    default: "https://gar.compute.dev.ddcdragon.com/"
+    default: "https://gar.compute.test.ddcdragon.com/"
   event_runtime_url:
     description: "Event runtime URL"
     required: false
-    default: "https://compute-1.devnet.ddc-dragon.com/event"
+    default: "https://events.compute.test.ddcdragon.com"
   agent_runtime_url:
     description: "Agent runtime URL"
     required: false
-    default: "https://compute-1.devnet.ddc-dragon.com/agent"
+    default: "https://agent.compute.test.ddcdragon.com"
   web_transport_url:
     description: "WebTransport endpoint URL"
     required: false
-    default: "https://compute-1.devnet.ddc-dragon.com:4433"
+    default: "https://agent.compute.test.ddcdragon.com:4433"
   sis_url:
     description: "SIS service URL"
     required: false
-    default: "https://compute-1.devnet.ddc-dragon.com/sis"
+    default: "https://sis.compute.test.ddcdragon.com"
   agent_service:
     description: "Agent service public key"
     required: true

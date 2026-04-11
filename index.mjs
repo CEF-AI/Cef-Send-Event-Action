@@ -9,12 +9,12 @@ import {
 globalThis.TextEncoder ??= TextEncoder;
 globalThis.TextDecoder ??= TextDecoder;
 
-const DEFAULT_BASE_URL = 'https://compute-1.devnet.ddc-dragon.com/orchestrator';
-const DEFAULT_GAR_URL = 'https://gar.compute.dev.ddcdragon.com/';
-const DEFAULT_WEB_TRANSPORT_URL = 'https://compute-1.devnet.ddc-dragon.com:4433';
-const DEFAULT_EVENT_URL = 'https://compute-1.devnet.ddc-dragon.com/event';
-const DEFAULT_AGENT_RUNTIME_URL = 'https://compute-1.devnet.ddc-dragon.com/agent';
-const DEFAULT_SIS_URL = 'https://compute-1.devnet.ddc-dragon.com/sis';
+const DEFAULT_BASE_URL = 'https://orchestrator.compute.test.ddcdragon.com';
+const DEFAULT_GAR_URL = 'https://gar.compute.test.ddcdragon.com/';
+const DEFAULT_WEB_TRANSPORT_URL = 'https://agent.compute.test.ddcdragon.com:4433';
+const DEFAULT_EVENT_URL = 'https://events.compute.test.ddcdragon.com';
+const DEFAULT_AGENT_RUNTIME_URL = 'https://agent.compute.test.ddcdragon.com';
+const DEFAULT_SIS_URL = 'https://sis.compute.test.ddcdragon.com';
 
 const eventType = process.env.EVENT_TYPE;
 const eventPayload = process.env.EVENT_PAYLOAD ?? '{}';

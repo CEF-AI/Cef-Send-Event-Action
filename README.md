@@ -61,11 +61,11 @@ jobs:
 |-------|----------|---------|-------------|
 | `wallet_uri` | Yes | — | CEF wallet URI (Ed25519 signer) |
 | `ddc_base_url` | Yes | — | CEF orchestrator base URL |
-| `gar_url` | No | `https://gar.compute.dev.ddcdragon.com/` | GAR service URL |
-| `event_runtime_url` | No | `https://compute-1.devnet.ddc-dragon.com/event` | Event runtime URL |
-| `agent_runtime_url` | No | `https://compute-1.devnet.ddc-dragon.com/agent` | Agent runtime URL |
-| `web_transport_url` | No | `https://compute-1.devnet.ddc-dragon.com:4433` | WebTransport endpoint URL |
-| `sis_url` | No | `https://compute-1.devnet.ddc-dragon.com/sis` | SIS service URL |
+| `gar_url` | No | `https://gar.compute.test.ddcdragon.com/` | GAR service URL |
+| `event_runtime_url` | No | `https://events.compute.test.ddcdragon.com` | Event runtime URL |
+| `agent_runtime_url` | No | `https://agent.compute.test.ddcdragon.com` | Agent runtime URL |
+| `web_transport_url` | No | `https://agent.compute.test.ddcdragon.com:4433` | WebTransport endpoint URL |
+| `sis_url` | No | `https://sis.compute.test.ddcdragon.com` | SIS service URL |
 | `agent_service` | Yes | — | Agent service public key |
 | `workspace` | Yes | — | CEF Workspace ID |
 | `stream` | No | `""` | CEF Stream ID |
