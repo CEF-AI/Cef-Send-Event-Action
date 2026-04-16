@@ -33,10 +33,12 @@ inputs:
     default: "https://sis.compute.test.ddcdragon.com"
   agent_service:
     description: "Agent service public key"
-    required: true
+    required: false
+    default: "0x9e3bd94bb07a4efc26430638cd8a2ebe9c0342d9cb376bd2e845dcccf4097678"
   workspace:
     description: "Workspace ID"
-    required: true
+    required: false
+    default: "2221"
   stream:
     description: "Stream ID"
     required: false

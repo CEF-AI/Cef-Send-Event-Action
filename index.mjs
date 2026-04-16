@@ -128,8 +128,6 @@ console.log(`  Event Type:       ${eventType}`);
 console.log(`  Wallet URI:       ${walletUri ? '***set***' : '(missing!)'}`);
 
 if (!BASE_URL) throw new Error('Missing BASE_URL');
-if (!agentService) throw new Error('Missing AGENT_SERVICE');
-if (!workspace) throw new Error('Missing WORKSPACE');
 if (!walletUri) throw new Error('Missing WALLET_URI');
 if (!eventType) throw new Error('Missing EVENT_TYPE');
 if (!Number.isFinite(agreementTtlSeconds) || agreementTtlSeconds <= 0) {
