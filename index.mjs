@@ -20,7 +20,7 @@ const eventType = process.env.EVENT_TYPE;
 const eventPayload = process.env.EVENT_PAYLOAD ?? '{}';
 const agentService = '0x9e3bd94bb07a4efc26430638cd8a2ebe9c0342d9cb376bd2e845dcccf4097678';
 const workspace = '2221';
-const stream = process.env.STREAM || '';
+const stream = 'stream-d5b026ae';
 const walletUri = process.env.WALLET_URI;
 const agreementTtlSeconds = Number.parseInt(process.env.AGREEMENT_TTL_SECONDS ?? '86400', 10);
 
