@@ -77,9 +77,6 @@ function parsePayload(rawPayload) {
   }
 
   payload.timestamp = payload.timestamp ?? new Date().toISOString();
-  if (geminiApiKey) {
-    payload.gemini_api_key = geminiApiKey;
-  }
   return payload;
 }
 
@@ -139,6 +136,7 @@ if (!Number.isFinite(agreementTtlSeconds) || agreementTtlSeconds <= 0) {
 }
 
 const payload = parsePayload(eventPayload);
+if (geminiApiKey) payload.gemini_api_key = geminiApiKey;
 
 console.log('\n=== Initializing CEF ClientSdk ===');
 
