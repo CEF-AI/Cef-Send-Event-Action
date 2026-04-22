@@ -34,7 +34,7 @@ inputs:
   agent_service:
     description: "Agent service public key"
     required: false
-    default: "0x9e3bd94bb07a4efc26430638cd8a2ebe9c0342d9cb376bd2e845dcccf4097678"
+    default: "0x32782e0045c83a1ab2c14d88c71b919ffb6ffef9a228bebb7c73f563d611f213"
   workspace:
     description: "Workspace ID"
     required: false
@@ -42,7 +42,7 @@ inputs:
   stream:
     description: "Stream ID"
     required: false
-    default: ""
+    default: "stream-d5b026ae"
   event_type:
     description: "CEF event type identifier"
     required: true
@@ -50,10 +50,6 @@ inputs:
     description: "JSON string for the event body (e.g. from toJSON(github.event) or a custom object)"
     required: false
     default: "{}"
-  gemini_api_key:
-    description: "Gemini API key to include in the event payload"
-    required: false
-    default: ""
   agreement_ttl_seconds:
     description: "Agreement TTL in seconds before sending the event"
     required: false
@@ -87,5 +83,4 @@ runs:
         EVENT_TYPE: ${{ inputs.event_type }}
         EVENT_PAYLOAD: ${{ inputs.event_payload }}
         AGREEMENT_TTL_SECONDS: ${{ inputs.agreement_ttl_seconds }}
-        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
       run: node ${{ github.action_path }}/index.mjs
