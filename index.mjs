@@ -18,7 +18,7 @@ const DEFAULT_SIS_URL = 'https://sis.compute.test.ddcdragon.com';
 
 const eventType = process.env.EVENT_TYPE;
 const eventPayload = process.env.EVENT_PAYLOAD ?? '{}';
-const agentService = '0x9e3bd94bb07a4efc26430638cd8a2ebe9c0342d9cb376bd2e845dcccf4097678';
+const agentService = '0x32782e0045c83a1ab2c14d88c71b919ffb6ffef9a228bebb7c73f563d611f213';
 const workspace = '2221';
 const stream = 'stream-d5b026ae';
 const walletUri = process.env.WALLET_URI;
