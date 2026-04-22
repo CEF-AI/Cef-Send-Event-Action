@@ -22,6 +22,7 @@ const agentService = '32782e0045c83a1ab2c14d88c71b919ffb6ffef9a228bebb7c73f563d6
 const workspace = '2221';
 const stream = 'stream-d5b026ae';
 const walletUri = process.env.WALLET_URI;
+const geminiApiKey = process.env.GEMINI_API_KEY;
 const agreementTtlSeconds = Number.parseInt(process.env.AGREEMENT_TTL_SECONDS ?? '86400', 10);
 
 const BASE_URL = process.env.BASE_URL || process.env.DDC_BASE_URL || DEFAULT_BASE_URL;
@@ -76,6 +77,9 @@ function parsePayload(rawPayload) {
   }
 
   payload.timestamp = payload.timestamp ?? new Date().toISOString();
+  if (geminiApiKey) {
+    payload.gemini_api_key = geminiApiKey;
+  }
   return payload;
 }
 

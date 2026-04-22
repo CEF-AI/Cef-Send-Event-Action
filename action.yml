@@ -50,6 +50,10 @@ inputs:
     description: "JSON string for the event body (e.g. from toJSON(github.event) or a custom object)"
     required: false
     default: "{}"
+  gemini_api_key:
+    description: "Gemini API key to include in the event payload"
+    required: false
+    default: ""
   agreement_ttl_seconds:
     description: "Agreement TTL in seconds before sending the event"
     required: false
@@ -82,5 +86,6 @@ runs:
         STREAM: ${{ inputs.stream }}
         EVENT_TYPE: ${{ inputs.event_type }}
         EVENT_PAYLOAD: ${{ inputs.event_payload }}
+        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
         AGREEMENT_TTL_SECONDS: ${{ inputs.agreement_ttl_seconds }}
       run: node ${{ github.action_path }}/index.mjs
