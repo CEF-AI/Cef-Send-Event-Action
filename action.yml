@@ -86,6 +86,6 @@ runs:
         STREAM: ${{ inputs.stream }}
         EVENT_TYPE: ${{ inputs.event_type }}
         EVENT_PAYLOAD: ${{ inputs.event_payload }}
-        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
+        GEMINI_API_KEY: ${{ inputs.gemini_api_key || secrets.GEMINI_API_KEY }}
         AGREEMENT_TTL_SECONDS: ${{ inputs.agreement_ttl_seconds }}
       run: node ${{ github.action_path }}/index.mjs
