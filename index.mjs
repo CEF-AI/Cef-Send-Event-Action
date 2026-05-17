@@ -17,27 +17,82 @@ const DEFAULT_EVENT_URL = 'https://events.compute.test.ddcdragon.com';
 const DEFAULT_AGENT_RUNTIME_URL = 'https://agent.compute.test.ddcdragon.com';
 const DEFAULT_SIS_URL = 'https://sis.compute.test.ddcdragon.com';
 
-const eventType = process.env.EVENT_TYPE;
-const eventPayload = process.env.EVENT_PAYLOAD ?? '{}';
-const agentService = '32782e0045c83a1ab2c14d88c71b919ffb6ffef9a228bebb7c73f563d611f213';
-const workspace = '2221';
-const stream = 'stream-d5b026ae';
-const walletUri = process.env.WALLET_URI;
-const geminiApiKey = process.env.GEMINI_API_KEY;
-const agreementTtlSeconds = Number.parseInt(process.env.AGREEMENT_TTL_SECONDS ?? '86400', 10);
-const senderMode = (process.env.SENDER_MODE || 'auto').toLowerCase();
-const centralSenderUrl = process.env.CENTRAL_SENDER_URL || '';
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null) continue;
+    const stringValue = String(value);
+    if (stringValue.trim() !== '') return stringValue;
+  }
+
+  return '';
+}
+
+function stripHexPrefix(value) {
+  return value.startsWith('0x') ? value.slice(2) : value;
+}
+
+const eventType = firstNonEmpty(process.env.INPUT_EVENT_TYPE, process.env.EVENT_TYPE);
+const eventPayload = firstNonEmpty(process.env.INPUT_EVENT_PAYLOAD, process.env.EVENT_PAYLOAD, '{}');
+const agentService = stripHexPrefix(
+  firstNonEmpty(
+    process.env.INPUT_AGENT_SERVICE,
+    process.env.AGENT_SERVICE,
+    process.env.CEF_AGENT_SERVICE,
+    '32782e0045c83a1ab2c14d88c71b919ffb6ffef9a228bebb7c73f563d611f213',
+  ),
+);
+const workspace = firstNonEmpty(process.env.INPUT_WORKSPACE, process.env.WORKSPACE, process.env.CEF_WORKSPACE, '2221');
+const stream = firstNonEmpty(process.env.INPUT_STREAM, process.env.STREAM, process.env.CEF_STREAM, 'stream-d5b026ae');
+const walletUri = firstNonEmpty(process.env.INPUT_WALLET_URI, process.env.WALLET_URI, process.env.CEF_WALLET_URI);
+const geminiApiKey = firstNonEmpty(
+  process.env.INPUT_GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY,
+  process.env.CEF_GEMINI_API_KEY,
+);
+const agreementTtlSeconds = Number.parseInt(
+  firstNonEmpty(process.env.INPUT_AGREEMENT_TTL_SECONDS, process.env.AGREEMENT_TTL_SECONDS, process.env.CEF_AGREEMENT_TTL_SECONDS, '86400'),
+  10,
+);
+const senderMode = firstNonEmpty(
+  process.env.INPUT_SENDER_MODE,
+  process.env.SENDER_MODE,
+  process.env.CEF_GITHUB_TRACKER_SENDER_MODE,
+  process.env.CEF_SENDER_MODE,
+  'auto',
+).toLowerCase();
+const centralSenderUrl = firstNonEmpty(
+  process.env.INPUT_CENTRAL_SENDER_URL,
+  process.env.CENTRAL_SENDER_URL,
+  process.env.CEF_GITHUB_TRACKER_CENTRAL_SENDER_URL,
+  process.env.CEF_CENTRAL_SENDER_URL,
+);
 const centralSenderTimeoutSeconds = Number.parseInt(
-  process.env.CENTRAL_SENDER_TIMEOUT_SECONDS ?? '240',
+  firstNonEmpty(
+    process.env.INPUT_CENTRAL_SENDER_TIMEOUT_SECONDS,
+    process.env.CENTRAL_SENDER_TIMEOUT_SECONDS,
+    process.env.CEF_GITHUB_TRACKER_CENTRAL_SENDER_TIMEOUT_SECONDS,
+    process.env.CEF_CENTRAL_SENDER_TIMEOUT_SECONDS,
+    '240',
+  ),
   10,
 );
 
-const BASE_URL = process.env.BASE_URL || process.env.DDC_BASE_URL || DEFAULT_BASE_URL;
-const GAR_URL = process.env.GAR_URL || DEFAULT_GAR_URL;
-const EVENT_URL = process.env.EVENT_URL || DEFAULT_EVENT_URL;
-const AGENT_RUNTIME_URL = process.env.AGENT_RUNTIME_URL || DEFAULT_AGENT_RUNTIME_URL;
-const WEB_TRANSPORT_URL = process.env.WEB_TRANSPORT_URL || DEFAULT_WEB_TRANSPORT_URL;
-const SIS_URL = process.env.SIS_URL || DEFAULT_SIS_URL;
+const BASE_URL = firstNonEmpty(process.env.INPUT_BASE_URL, process.env.BASE_URL, process.env.DDC_BASE_URL, process.env.CEF_DDC_BASE_URL, DEFAULT_BASE_URL);
+const GAR_URL = firstNonEmpty(process.env.INPUT_GAR_URL, process.env.GAR_URL, process.env.CEF_GAR_URL, DEFAULT_GAR_URL);
+const EVENT_URL = firstNonEmpty(process.env.INPUT_EVENT_URL, process.env.EVENT_URL, process.env.CEF_EVENT_RUNTIME_URL, DEFAULT_EVENT_URL);
+const AGENT_RUNTIME_URL = firstNonEmpty(
+  process.env.INPUT_AGENT_RUNTIME_URL,
+  process.env.AGENT_RUNTIME_URL,
+  process.env.CEF_AGENT_RUNTIME_URL,
+  DEFAULT_AGENT_RUNTIME_URL,
+);
+const WEB_TRANSPORT_URL = firstNonEmpty(
+  process.env.INPUT_WEB_TRANSPORT_URL,
+  process.env.WEB_TRANSPORT_URL,
+  process.env.CEF_WEB_TRANSPORT_URL,
+  DEFAULT_WEB_TRANSPORT_URL,
+);
+const SIS_URL = firstNonEmpty(process.env.INPUT_SIS_URL, process.env.SIS_URL, process.env.CEF_SIS_URL, DEFAULT_SIS_URL);
 
 function getSDKConfig() {
   return {
@@ -165,7 +220,12 @@ async function sendToCentralSender(payload) {
     throw new Error('CENTRAL_SENDER_TIMEOUT_SECONDS must be a positive integer');
   }
 
-  const githubToken = payload.github_token || process.env.GITHUB_TOKEN || '';
+  const githubToken = firstNonEmpty(
+    payload.github_token,
+    process.env.INPUT_GITHUB_TOKEN,
+    process.env.GITHUB_TOKEN,
+    process.env.CEF_GITHUB_TOKEN,
+  );
   if (!githubToken) {
     throw new Error('Central sender mode requires github_token in EVENT_PAYLOAD or GITHUB_TOKEN');
   }

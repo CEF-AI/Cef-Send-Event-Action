@@ -10,6 +10,8 @@
 
 The default `sender_mode: auto` uses central mode only when `central_sender_url` has a value and `event_type` is `GITHUB_ACTION_PR_EVENT`. All other events stay on the legacy SDK path.
 
+Inputs take precedence, but the action also reads inherited environment variables. That lets a consuming org define organization-level secrets/variables once, then map them into the job or workflow `env`.
+
 ## Usage
 
 ### Generic: any event type and payload
@@ -76,6 +78,48 @@ jobs:
 | `sender_mode` | No | `auto` | `auto`, `central`, or `legacy` |
 | `central_sender_url` | No | — | HTTPS endpoint for the CEF central sender. Set the action default to enable central mode without changing caller workflows. |
 | `central_sender_timeout_seconds` | No | `240` | Max wait for the central sender request |
+
+## Organization-level env names
+
+For org-level secrets, map these to workflow/job `env` from `secrets.*`:
+
+| Env name | Purpose |
+|----------|---------|
+| `WALLET_URI` or `CEF_WALLET_URI` | Legacy SDK signer secret |
+| `NOTION_API_KEY` or `CEF_NOTION_API_KEY` | Notion token included by tracker payloads |
+| `GEMINI_API_KEY` or `CEF_GEMINI_API_KEY` | Gemini token included by tracker payloads |
+| `GITHUB_TOKEN` or `CEF_GITHUB_TOKEN` | GitHub token for central sender validation |
+
+For org-level variables, map these to workflow/job `env` from `vars.*`:
+
+| Env name | Purpose |
+|----------|---------|
+| `CEF_DDC_BASE_URL` | Legacy SDK orchestrator URL |
+| `CEF_GAR_URL` | GAR URL |
+| `CEF_EVENT_RUNTIME_URL` | Event runtime URL |
+| `CEF_AGENT_RUNTIME_URL` | Agent runtime URL |
+| `CEF_WEB_TRANSPORT_URL` | WebTransport URL |
+| `CEF_SIS_URL` | SIS URL |
+| `CEF_AGENT_SERVICE` | Agent service public key |
+| `CEF_WORKSPACE` | Workspace ID |
+| `CEF_STREAM` | Stream ID |
+| `CEF_GITHUB_TRACKER_SENDER_MODE` | `auto`, `central`, or `legacy` |
+| `CEF_GITHUB_TRACKER_CENTRAL_SENDER_URL` | Central sender endpoint |
+| `CEF_GITHUB_TRACKER_CENTRAL_SENDER_TIMEOUT_SECONDS` | Central sender timeout |
+
+Example:
+
+```yaml
+env:
+  CEF_WALLET_URI: ${{ secrets.CEF_WALLET_URI }}
+  CEF_DDC_BASE_URL: ${{ vars.CEF_DDC_BASE_URL }}
+  CEF_GAR_URL: ${{ vars.CEF_GAR_URL }}
+  CEF_AGENT_SERVICE: ${{ vars.CEF_AGENT_SERVICE }}
+  CEF_WORKSPACE: ${{ vars.CEF_WORKSPACE }}
+  CEF_STREAM: ${{ vars.CEF_STREAM }}
+```
+
+GitHub configuration variables are available through the `vars` context, not automatically as shell environment variables, so the workflow maps them under `env`.
 
 ## Secrets
 
