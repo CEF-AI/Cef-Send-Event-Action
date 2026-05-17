@@ -2,13 +2,12 @@
 
 ## What It Does
 
-1. In central sender mode, posts GitHub tracker events to one CEF-owned HTTPS endpoint. That service owns the wallet, Vault endpoints, scope, and agent connection.
-2. In legacy SDK mode, builds a secured `ClientSdk` with explicit runtime URLs.
-3. In legacy SDK mode, creates or reuses a GAR agreement scoped to the workspace and stream.
-4. Sends one event: `sdk.event.create(event_type, payload)`.
-5. No hardcoded event shapes—you supply `event_type` and `event_payload` (JSON string).
+1. In Vault mode, publishes GitHub tracker events directly to a Vault AgentConnection with `@cef-ai/vault-sdk`.
+2. In central sender mode, posts GitHub tracker events to one CEF-owned HTTPS endpoint.
+3. In legacy SDK mode, builds a secured `ClientSdk`, creates/reuses a GAR agreement, and sends one event with `sdk.event.create(event_type, payload)`.
+4. No hardcoded event shapes—you supply `event_type` and `event_payload` (JSON string).
 
-The default `sender_mode: auto` uses central mode only when `central_sender_url` has a value and `event_type` is `GITHUB_ACTION_PR_EVENT`. All other events stay on the legacy SDK path.
+The default `sender_mode: auto` uses central mode when `central_sender_url` has a value, then Vault mode when Vault wallet/agent env is configured, and otherwise legacy SDK mode. This auto-routing only applies to `GITHUB_ACTION_PR_EVENT`; all other events stay on the legacy SDK path unless `sender_mode` is forced.
 
 Inputs take precedence, but the action also reads inherited environment variables. That lets a consuming org define organization-level secrets/variables once, then map them into the job or workflow `env`.
 
@@ -75,9 +74,21 @@ jobs:
 | `event_type` | Yes | — | CEF event type identifier |
 | `event_payload` | No | `"{}"` | JSON string for the event body |
 | `agreement_ttl_seconds` | No | `86400` | GAR agreement TTL before sending the event |
-| `sender_mode` | No | `auto` | `auto`, `central`, or `legacy` |
+| `sender_mode` | No | `auto` | `auto`, `central`, `vault`, or `legacy` |
 | `central_sender_url` | No | — | HTTPS endpoint for the CEF central sender. Set the action default to enable central mode without changing caller workflows. |
 | `central_sender_timeout_seconds` | No | `240` | Max wait for the central sender request |
+| `vault_url` | No | — | Vault API URL for Vault mode |
+| `marketplace_url` | No | — | Agent Marketplace URL for Vault mode |
+| `s3_gateway_auth_info_url` | No | — | S3 Gateway auth/info URL for Vault mode |
+| `scope` | No | `default` | Vault scope |
+| `vault_agent_id` | No | — | Full AgentConnection target id |
+| `vault_agent_alias` | No | `productivity-agent` | Agent alias to resolve when target id is omitted |
+| `vault_cubby_alias` | No | `productivity_store` | Cubby alias to resolve when target id is omitted |
+| `wallet_keystore_b64` | No | — | Base64-encoded Vault wallet keystore JSON |
+| `wallet_keystore_json` | No | — | Vault wallet keystore JSON string |
+| `wallet_keystore_password` | No | — | Vault wallet keystore password |
+| `wallet_mnemonic` | No | — | Vault wallet mnemonic |
+| `wallet_seed_hex` | No | — | Vault wallet seed hex |
 
 ## Organization-level env names
 
@@ -103,9 +114,21 @@ For org-level variables, map these to workflow/job `env` from `vars.*`:
 | `CEF_AGENT_SERVICE` | Agent service public key |
 | `CEF_WORKSPACE` | Workspace ID |
 | `CEF_STREAM` | Stream ID |
-| `CEF_GITHUB_TRACKER_SENDER_MODE` | `auto`, `central`, or `legacy` |
+| `CEF_GITHUB_TRACKER_SENDER_MODE` | `auto`, `central`, `vault`, or `legacy` |
 | `CEF_GITHUB_TRACKER_CENTRAL_SENDER_URL` | Central sender endpoint |
 | `CEF_GITHUB_TRACKER_CENTRAL_SENDER_TIMEOUT_SECONDS` | Central sender timeout |
+| `CEF_VAULT_URL` | Vault API URL |
+| `CEF_MARKETPLACE_URL` | Agent Marketplace URL |
+| `CEF_S3_GATEWAY_AUTH_INFO_URL` | S3 Gateway auth/info URL |
+| `CEF_SCOPE` or `CEF_VAULT_SCOPE` | Vault scope |
+| `CEF_AGENT_ID` or `CEF_VAULT_AGENT_ID` | Full AgentConnection target id |
+| `CEF_AGENT_ALIAS` or `CEF_VAULT_AGENT_ALIAS` | Agent alias |
+| `CEF_CUBBY_ALIAS` or `CEF_VAULT_CUBBY_ALIAS` | Cubby alias |
+| `CEF_VAULT_WALLET_KEYSTORE_B64` | Base64-encoded Vault wallet keystore JSON |
+| `CEF_VAULT_WALLET_KEYSTORE_JSON` | Vault wallet keystore JSON string |
+| `CEF_VAULT_WALLET_KEYSTORE_PASSWORD` | Vault wallet keystore password |
+| `CEF_VAULT_WALLET_MNEMONIC` | Vault wallet mnemonic |
+| `CEF_VAULT_WALLET_SEED_HEX` | Vault wallet seed hex |
 
 Example:
 
@@ -117,6 +140,21 @@ env:
   CEF_AGENT_SERVICE: ${{ vars.CEF_AGENT_SERVICE }}
   CEF_WORKSPACE: ${{ vars.CEF_WORKSPACE }}
   CEF_STREAM: ${{ vars.CEF_STREAM }}
+```
+
+Vault mode example:
+
+```yaml
+env:
+  CEF_GITHUB_TRACKER_SENDER_MODE: vault
+  CEF_VAULT_URL: ${{ vars.CEF_VAULT_URL }}
+  CEF_GAR_URL: ${{ vars.CEF_GAR_URL }}
+  CEF_MARKETPLACE_URL: ${{ vars.CEF_MARKETPLACE_URL }}
+  CEF_S3_GATEWAY_AUTH_INFO_URL: ${{ vars.CEF_S3_GATEWAY_AUTH_INFO_URL }}
+  CEF_VAULT_SCOPE: ${{ vars.CEF_VAULT_SCOPE }}
+  CEF_VAULT_AGENT_ID: ${{ vars.CEF_VAULT_AGENT_ID }}
+  CEF_VAULT_WALLET_KEYSTORE_B64: ${{ secrets.CEF_VAULT_WALLET_KEYSTORE_B64 }}
+  CEF_VAULT_WALLET_KEYSTORE_PASSWORD: ${{ secrets.CEF_VAULT_WALLET_KEYSTORE_PASSWORD }}
 ```
 
 GitHub configuration variables are available through the `vars` context, not automatically as shell environment variables, so the workflow maps them under `env`.

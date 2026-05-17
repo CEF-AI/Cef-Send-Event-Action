@@ -65,7 +65,7 @@ inputs:
     required: false
     default: "86400"
   sender_mode:
-    description: "auto sends GitHub tracker events to central_sender_url when configured, otherwise legacy. Use central or legacy to force one path."
+    description: "auto sends GitHub tracker events to central_sender_url or Vault when configured, otherwise legacy. Use central, vault, or legacy to force one path."
     required: false
     default: "auto"
   central_sender_url:
@@ -76,6 +76,54 @@ inputs:
     description: "Maximum time to wait for the central sender HTTP request."
     required: false
     default: "240"
+  vault_url:
+    description: "Vault API URL for Vault SDK mode"
+    required: false
+    default: ""
+  marketplace_url:
+    description: "Agent Marketplace URL for Vault SDK mode"
+    required: false
+    default: ""
+  s3_gateway_auth_info_url:
+    description: "S3 Gateway auth/info URL for Vault SDK mode"
+    required: false
+    default: ""
+  scope:
+    description: "Vault scope for Vault SDK mode"
+    required: false
+    default: ""
+  vault_agent_id:
+    description: "Full Vault AgentConnection target id"
+    required: false
+    default: ""
+  vault_agent_alias:
+    description: "Agent alias to resolve when vault_agent_id is omitted"
+    required: false
+    default: ""
+  vault_cubby_alias:
+    description: "Cubby alias to resolve when vault_agent_id is omitted"
+    required: false
+    default: ""
+  wallet_keystore_b64:
+    description: "Base64-encoded Vault wallet keystore JSON"
+    required: false
+    default: ""
+  wallet_keystore_json:
+    description: "Vault wallet keystore JSON string"
+    required: false
+    default: ""
+  wallet_keystore_password:
+    description: "Vault wallet keystore password"
+    required: false
+    default: ""
+  wallet_mnemonic:
+    description: "Vault wallet mnemonic"
+    required: false
+    default: ""
+  wallet_seed_hex:
+    description: "Vault wallet seed hex"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -110,4 +158,16 @@ runs:
         INPUT_SENDER_MODE: ${{ inputs.sender_mode }}
         INPUT_CENTRAL_SENDER_URL: ${{ inputs.central_sender_url }}
         INPUT_CENTRAL_SENDER_TIMEOUT_SECONDS: ${{ inputs.central_sender_timeout_seconds }}
+        INPUT_VAULT_URL: ${{ inputs.vault_url }}
+        INPUT_MARKETPLACE_URL: ${{ inputs.marketplace_url }}
+        INPUT_S3_GATEWAY_AUTH_INFO_URL: ${{ inputs.s3_gateway_auth_info_url }}
+        INPUT_SCOPE: ${{ inputs.scope }}
+        INPUT_VAULT_AGENT_ID: ${{ inputs.vault_agent_id }}
+        INPUT_VAULT_AGENT_ALIAS: ${{ inputs.vault_agent_alias }}
+        INPUT_VAULT_CUBBY_ALIAS: ${{ inputs.vault_cubby_alias }}
+        INPUT_WALLET_KEYSTORE_B64: ${{ inputs.wallet_keystore_b64 }}
+        INPUT_WALLET_KEYSTORE_JSON: ${{ inputs.wallet_keystore_json }}
+        INPUT_WALLET_KEYSTORE_PASSWORD: ${{ inputs.wallet_keystore_password }}
+        INPUT_WALLET_MNEMONIC: ${{ inputs.wallet_mnemonic }}
+        INPUT_WALLET_SEED_HEX: ${{ inputs.wallet_seed_hex }}
       run: node ${{ github.action_path }}/index.mjs
