@@ -216,11 +216,23 @@ function parsePayload(rawPayload) {
     payload.delivery_id = payload.delivery_id ?? `${runId}-${Date.now()}`;
   }
 
-  payload.timestamp = payload.timestamp ?? new Date().toISOString();
+  if (!payload.timestamp && !hasNativeGitHubTimestamp(payload)) {
+    payload.timestamp = new Date().toISOString();
+  }
   if (geminiApiKey) {
     payload.gemini_api_key = geminiApiKey;
   }
   return payload;
+}
+
+function hasNativeGitHubTimestamp(payload) {
+  return Boolean(
+    payload.pull_request?.updated_at
+    || payload.pull_request?.created_at
+    || payload.review?.submitted_at
+    || payload.head_commit?.timestamp
+    || payload.repository?.updated_at,
+  );
 }
 
 function sanitizeCentralPayload(payload) {
@@ -466,12 +478,15 @@ function buildVaultPayload(payload) {
     || process.env.GITHUB_REF_NAME
     || process.env.GITHUB_REF?.replace(/^refs\/heads\//, '')
     || 'unknown';
+  const prNumber = payload.pr_number ?? payload.number ?? payload.pull_request?.number ?? null;
 
   const vaultPayload = {
     ...payload,
     event_type: payload.event_type || process.env.GITHUB_EVENT_NAME || eventType,
     repo,
     branch,
+    pr_number: prNumber,
+    head_sha: payload.head_sha || payload.after || payload.pull_request?.head?.sha || null,
     delivery_id: payload.delivery_id
       || (process.env.GITHUB_RUN_ID
         ? `${process.env.GITHUB_RUN_ID}-${process.env.GITHUB_RUN_ATTEMPT || '1'}`
