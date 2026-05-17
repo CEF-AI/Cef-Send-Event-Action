@@ -6,11 +6,13 @@ branding:
 
 inputs:
   wallet_uri:
-    description: "CEF wallet URI (Ed25519 signer)"
-    required: true
+    description: "Legacy SDK mode only: CEF wallet URI (Ed25519 signer)"
+    required: false
+    default: ""
   ddc_base_url:
-    description: "CEF orchestrator base URL"
-    required: true
+    description: "Legacy SDK mode only: CEF orchestrator base URL"
+    required: false
+    default: ""
   gar_url:
     description: "GAR service URL"
     required: false
@@ -58,6 +60,18 @@ inputs:
     description: "Agreement TTL in seconds before sending the event"
     required: false
     default: "86400"
+  sender_mode:
+    description: "auto sends GitHub tracker events to central_sender_url when configured, otherwise legacy. Use central or legacy to force one path."
+    required: false
+    default: "auto"
+  central_sender_url:
+    description: "Optional central CEF GitHub sender endpoint. Set this default in the action release to enable central mode without changing caller workflows."
+    required: false
+    default: ""
+  central_sender_timeout_seconds:
+    description: "Maximum time to wait for the central sender HTTP request."
+    required: false
+    default: "240"
 
 runs:
   using: "composite"
@@ -88,4 +102,7 @@ runs:
         EVENT_PAYLOAD: ${{ inputs.event_payload }}
         GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
         AGREEMENT_TTL_SECONDS: ${{ inputs.agreement_ttl_seconds }}
+        SENDER_MODE: ${{ inputs.sender_mode }}
+        CENTRAL_SENDER_URL: ${{ inputs.central_sender_url }}
+        CENTRAL_SENDER_TIMEOUT_SECONDS: ${{ inputs.central_sender_timeout_seconds }}
       run: node ${{ github.action_path }}/index.mjs

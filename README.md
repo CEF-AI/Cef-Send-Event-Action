@@ -2,10 +2,13 @@
 
 ## What It Does
 
-1. Builds a secured `ClientSdk` with explicit runtime URLs.
-2. Creates or reuses a GAR agreement scoped to the workspace and stream.
-3. Sends one event: `sdk.event.create(event_type, payload)`.
-4. No hardcoded event shapes—you supply `event_type` and `event_payload` (JSON string).
+1. In central sender mode, posts GitHub tracker events to one CEF-owned HTTPS endpoint. That service owns the wallet, Vault endpoints, scope, and agent connection.
+2. In legacy SDK mode, builds a secured `ClientSdk` with explicit runtime URLs.
+3. In legacy SDK mode, creates or reuses a GAR agreement scoped to the workspace and stream.
+4. Sends one event: `sdk.event.create(event_type, payload)`.
+5. No hardcoded event shapes—you supply `event_type` and `event_payload` (JSON string).
+
+The default `sender_mode: auto` uses central mode only when `central_sender_url` has a value and `event_type` is `GITHUB_ACTION_PR_EVENT`. All other events stay on the legacy SDK path.
 
 ## Usage
 
@@ -57,19 +60,22 @@ jobs:
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `wallet_uri` | Yes | — | CEF wallet URI (Ed25519 signer) |
-| `ddc_base_url` | Yes | — | CEF orchestrator base URL |
+| `wallet_uri` | Legacy only | — | CEF wallet URI (Ed25519 signer) |
+| `ddc_base_url` | Legacy only | — | CEF orchestrator base URL |
 | `gar_url` | No | `https://gar.compute.test.ddcdragon.com/` | GAR service URL |
 | `event_runtime_url` | No | `https://events.compute.test.ddcdragon.com` | Event runtime URL |
 | `agent_runtime_url` | No | `https://agent.compute.test.ddcdragon.com` | Agent runtime URL |
 | `web_transport_url` | No | `https://agent.compute.test.ddcdragon.com:4433` | WebTransport endpoint URL |
 | `sis_url` | No | `https://sis.compute.test.ddcdragon.com` | SIS service URL |
-| `agent_service` | Yes | — | Agent service public key |
-| `workspace` | Yes | — | CEF Workspace ID |
+| `agent_service` | Legacy only | — | Agent service public key |
+| `workspace` | Legacy only | — | CEF Workspace ID |
 | `stream` | No | `""` | CEF Stream ID |
 | `event_type` | Yes | — | CEF event type identifier |
 | `event_payload` | No | `"{}"` | JSON string for the event body |
 | `agreement_ttl_seconds` | No | `86400` | GAR agreement TTL before sending the event |
+| `sender_mode` | No | `auto` | `auto`, `central`, or `legacy` |
+| `central_sender_url` | No | — | HTTPS endpoint for the CEF central sender. Set the action default to enable central mode without changing caller workflows. |
+| `central_sender_timeout_seconds` | No | `240` | Max wait for the central sender request |
 
 ## Secrets
 
@@ -84,6 +90,8 @@ In the consuming repo, **Settings → Secrets and variables → Actions**:
 | `CEF_WORKSPACE` | Workspace ID |
 
 Add any other secrets your payload needs (e.g. `NOTION_API_KEY`) and inject them when building `event_payload` in a prior step.
+
+Central sender mode does not require wallet secrets in each caller repo. Put the wallet and CEF endpoint credentials in the central sender service, then release this action with `central_sender_url` defaulting to that endpoint. The action sends the caller's `github_token` as the HTTP bearer token so the central service can validate the GitHub repository/run before signing and publishing to CEF. `github_token`, `notion_api_key`, and `gemini_api_key` are removed from the JSON payload sent to the central endpoint.
 
 ## Payload
 

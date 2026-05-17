@@ -1,4 +1,5 @@
 import { TextEncoder, TextDecoder } from 'node:util';
+import { readFileSync } from 'node:fs';
 import {
   AgreementAlreadyExistsError,
   ClientContext,
@@ -24,6 +25,12 @@ const stream = 'stream-d5b026ae';
 const walletUri = process.env.WALLET_URI;
 const geminiApiKey = process.env.GEMINI_API_KEY;
 const agreementTtlSeconds = Number.parseInt(process.env.AGREEMENT_TTL_SECONDS ?? '86400', 10);
+const senderMode = (process.env.SENDER_MODE || 'auto').toLowerCase();
+const centralSenderUrl = process.env.CENTRAL_SENDER_URL || '';
+const centralSenderTimeoutSeconds = Number.parseInt(
+  process.env.CENTRAL_SENDER_TIMEOUT_SECONDS ?? '240',
+  10,
+);
 
 const BASE_URL = process.env.BASE_URL || process.env.DDC_BASE_URL || DEFAULT_BASE_URL;
 const GAR_URL = process.env.GAR_URL || DEFAULT_GAR_URL;
@@ -83,6 +90,108 @@ function parsePayload(rawPayload) {
   return payload;
 }
 
+function sanitizeCentralPayload(payload) {
+  const sanitized = { ...payload };
+  delete sanitized.notion_api_key;
+  delete sanitized.github_token;
+  delete sanitized.gemini_api_key;
+  return sanitized;
+}
+
+function readRawGitHubEvent() {
+  const eventPath = process.env.GITHUB_EVENT_PATH;
+  if (!eventPath) return null;
+
+  try {
+    return JSON.parse(readFileSync(eventPath, 'utf8'));
+  } catch (err) {
+    console.warn(`  Could not read GITHUB_EVENT_PATH: ${err.message}`);
+    return null;
+  }
+}
+
+function buildCentralRequest(payload) {
+  return {
+    source: 'cef-send-event-action',
+    type: 'github_event',
+    event_type: 'github_event',
+    legacy_event_type: eventType,
+    target: {
+      repository: process.env.GITHUB_REPOSITORY || payload.repo || null,
+      ref: process.env.GITHUB_REF || null,
+      sha: process.env.GITHUB_SHA || payload.after || payload.head_sha || null,
+    },
+    context: {
+      source: 'cef-send-event-action',
+      github: {
+        event_name: process.env.GITHUB_EVENT_NAME || null,
+        repository: process.env.GITHUB_REPOSITORY || null,
+        run_id: process.env.GITHUB_RUN_ID || null,
+        run_attempt: process.env.GITHUB_RUN_ATTEMPT || null,
+        workflow: process.env.GITHUB_WORKFLOW || null,
+        job: process.env.GITHUB_JOB || null,
+        ref: process.env.GITHUB_REF || null,
+        sha: process.env.GITHUB_SHA || null,
+        actor: process.env.GITHUB_ACTOR || null,
+        server_url: process.env.GITHUB_SERVER_URL || 'https://github.com',
+        api_url: process.env.GITHUB_API_URL || 'https://api.github.com',
+      },
+    },
+    payload: sanitizeCentralPayload(payload),
+    raw_event: readRawGitHubEvent(),
+  };
+}
+
+function shouldUseCentralSender() {
+  switch (senderMode) {
+    case 'auto':
+      return Boolean(centralSenderUrl) && eventType === 'GITHUB_ACTION_PR_EVENT';
+    case 'central':
+      if (!centralSenderUrl) {
+        throw new Error(
+          'sender_mode=central requires CENTRAL_SENDER_URL or a non-empty central_sender_url default in action.yml',
+        );
+      }
+      return true;
+    case 'legacy':
+      return false;
+    default:
+      throw new Error(`Unsupported SENDER_MODE '${senderMode}'. Use auto, central, or legacy.`);
+  }
+}
+
+async function sendToCentralSender(payload) {
+  if (!Number.isFinite(centralSenderTimeoutSeconds) || centralSenderTimeoutSeconds <= 0) {
+    throw new Error('CENTRAL_SENDER_TIMEOUT_SECONDS must be a positive integer');
+  }
+
+  const githubToken = payload.github_token || process.env.GITHUB_TOKEN || '';
+  if (!githubToken) {
+    throw new Error('Central sender mode requires github_token in EVENT_PAYLOAD or GITHUB_TOKEN');
+  }
+
+  const request = buildCentralRequest(payload);
+  const response = await fetch(centralSenderUrl, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${githubToken}`,
+      'x-github-event': process.env.GITHUB_EVENT_NAME || '',
+      'x-github-repository': process.env.GITHUB_REPOSITORY || request.target.repository || '',
+      'x-github-run-id': process.env.GITHUB_RUN_ID || '',
+    },
+    body: JSON.stringify(request),
+    signal: AbortSignal.timeout(centralSenderTimeoutSeconds * 1000),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`CEF central sender returned HTTP ${response.status}: ${body}`);
+  }
+
+  console.log(`  CEF central sender accepted GitHub event (HTTP ${response.status}).`);
+}
+
 async function ensureAgreement(client, context) {
   const scopeContext = {
     workspace_id: context.workspace,
@@ -130,15 +239,26 @@ console.log(`  Workspace:        ${workspace}`);
 console.log(`  Stream:           ${stream || '(none)'}`);
 console.log(`  Event Type:       ${eventType}`);
 console.log(`  Wallet URI:       ${walletUri ? '***set***' : '(missing!)'}`);
+console.log(`  Sender Mode:      ${senderMode}`);
+console.log(`  Central Sender:   ${centralSenderUrl ? '***set***' : '(not set)'}`);
 
 if (!BASE_URL) throw new Error('Missing BASE_URL');
-if (!walletUri) throw new Error('Missing WALLET_URI');
 if (!eventType) throw new Error('Missing EVENT_TYPE');
 if (!Number.isFinite(agreementTtlSeconds) || agreementTtlSeconds <= 0) {
   throw new Error('AGREEMENT_TTL_SECONDS must be a positive integer');
 }
 
 const payload = parsePayload(eventPayload);
+const useCentralSender = shouldUseCentralSender();
+
+if (useCentralSender) {
+  console.log('\n=== Sending to CEF Central Sender ===');
+  await sendToCentralSender(payload);
+  console.log('\nDone. Event sent to CEF central sender.');
+  process.exit(0);
+}
+
+if (!walletUri) throw new Error('Missing WALLET_URI');
 
 console.log('\n=== Initializing CEF ClientSdk ===');
 
