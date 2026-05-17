@@ -159,6 +159,8 @@ env:
 
 GitHub configuration variables are available through the `vars` context, not automatically as shell environment variables, so the workflow maps them under `env`.
 
+Set `CEF_SHOW_POLKADOT_VERSION_WARNINGS=true` only when debugging Vault SDK dependency resolution. Vault mode filters the known duplicate-version warning block by default so publish logs stay focused on actionable failures.
+
 ## Secrets
 
 In the consuming repo, **Settings → Secrets and variables → Actions**:

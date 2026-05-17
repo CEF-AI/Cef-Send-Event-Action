@@ -1,11 +1,5 @@
 import { TextEncoder, TextDecoder } from 'node:util';
 import { readFileSync } from 'node:fs';
-import {
-  AgreementAlreadyExistsError,
-  ClientContext,
-  ClientSdk,
-  UriSigner,
-} from '@cef-ai/client-sdk';
 
 globalThis.TextEncoder ??= TextEncoder;
 globalThis.TextDecoder ??= TextDecoder;
@@ -39,6 +33,101 @@ function stripHexPrefix(value) {
 
 function present(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function envFlagEnabled(value) {
+  return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
+}
+
+function installPolkadotVersionWarningFilter() {
+  if (envFlagEnabled(process.env.CEF_SHOW_POLKADOT_VERSION_WARNINGS)) {
+    return () => {};
+  }
+
+  const originalWrite = process.stderr.write;
+  let suppressBlock = false;
+  let pending = '';
+
+  function isWarningStart(line) {
+    return line.startsWith('@polkadot/')
+      && line.includes(' has multiple versions');
+  }
+
+  function isWarningContinuation(line) {
+    return line === ''
+      || line.startsWith('Either remove ')
+      || line.startsWith('The following conflicting packages were found:')
+      || line.startsWith('\t');
+  }
+
+  function filterLine(line) {
+    if (isWarningStart(line)) {
+      suppressBlock = true;
+      return '';
+    }
+
+    if (suppressBlock) {
+      if (isWarningContinuation(line)) {
+        if (line === '') suppressBlock = false;
+        return '';
+      }
+
+      suppressBlock = false;
+    }
+
+    return line;
+  }
+
+  function filterText(text) {
+    const combined = pending + text;
+    const lines = combined.match(/[^\n]*\n|[^\n]+$/g) || [];
+    pending = '';
+
+    if (combined && !combined.endsWith('\n') && lines.length > 0) {
+      pending = lines.pop();
+    }
+
+    return lines
+      .map((lineWithNewline) => {
+        const newline = lineWithNewline.endsWith('\n')
+          ? (lineWithNewline.endsWith('\r\n') ? '\r\n' : '\n')
+          : '';
+        const line = newline ? lineWithNewline.slice(0, -newline.length) : lineWithNewline;
+        const filtered = filterLine(line);
+        return filtered ? `${filtered}${newline}` : '';
+      })
+      .join('');
+  }
+
+  process.stderr.write = function writeFiltered(chunk, encoding, callback) {
+    const cb = typeof encoding === 'function' ? encoding : callback;
+    const enc = typeof encoding === 'string' ? encoding : undefined;
+
+    if (typeof chunk !== 'string' && !Buffer.isBuffer(chunk)) {
+      return originalWrite.call(process.stderr, chunk, encoding, callback);
+    }
+
+    const text = Buffer.isBuffer(chunk) ? chunk.toString(enc) : chunk;
+    const filtered = filterText(text);
+
+    if (!filtered) {
+      if (typeof cb === 'function') process.nextTick(cb);
+      return true;
+    }
+
+    return enc
+      ? originalWrite.call(process.stderr, filtered, enc, cb)
+      : originalWrite.call(process.stderr, filtered, cb);
+  };
+
+  return () => {
+    if (pending) {
+      const filtered = filterLine(pending);
+      pending = '';
+      if (filtered) originalWrite.call(process.stderr, filtered);
+    }
+    process.stderr.write = originalWrite;
+  };
 }
 
 const eventType = firstNonEmpty(process.env.INPUT_EVENT_TYPE, process.env.EVENT_TYPE);
@@ -184,6 +273,7 @@ function getSDKConfig() {
 }
 
 async function initWallet(secret) {
+  const { UriSigner } = await import('@cef-ai/client-sdk');
   const signer = new UriSigner(secret, { type: 'ed25519' });
   if (typeof signer.isReady === 'function') {
     await signer.isReady();
@@ -512,37 +602,43 @@ function buildVaultContext(payload) {
 }
 
 async function sendToVault(payload) {
-  const { VaultSDK } = await import('@cef-ai/vault-sdk');
-  const wallet = await createVaultWallet();
-  const sdk = new VaultSDK({
-    endpoint: VAULT_URL,
-    garEndpoint: VAULT_GAR_URL,
-    marketplaceEndpoint: MARKETPLACE_URL,
-    s3GatewayAuthInfoUrl: S3_GATEWAY_AUTH_INFO_URL,
-    wallet,
-  });
+  const restorePolkadotWarningFilter = installPolkadotVersionWarningFilter();
 
-  const vault = await sdk.vault.ensure({ onboard: false });
-  const connections = await vault.agents.list();
-  const target = resolveVaultTarget(connections);
-  const vaultPayload = buildVaultPayload(payload);
+  try {
+    const { VaultSDK } = await import('@cef-ai/vault-sdk');
+    const wallet = await createVaultWallet();
+    const sdk = new VaultSDK({
+      endpoint: VAULT_URL,
+      garEndpoint: VAULT_GAR_URL,
+      marketplaceEndpoint: MARKETPLACE_URL,
+      s3GatewayAuthInfoUrl: S3_GATEWAY_AUTH_INFO_URL,
+      wallet,
+    });
 
-  const result = await vault.scope(scope).publish({
-    type: 'github_event',
-    role: 'source',
-    target,
-    context: buildVaultContext(vaultPayload),
-    payload: vaultPayload,
-  });
-  const normalized = normalizePublishResult(result);
+    const vault = await sdk.vault.ensure({ onboard: false });
+    const connections = await vault.agents.list();
+    const target = resolveVaultTarget(connections);
+    const vaultPayload = buildVaultPayload(payload);
 
-  if (normalized.rejected.length > 0) {
-    throw new Error(`Vault rejected event: ${JSON.stringify(normalized.rejected)}`);
+    const result = await vault.scope(scope).publish({
+      type: 'github_event',
+      role: 'source',
+      target,
+      context: buildVaultContext(vaultPayload),
+      payload: vaultPayload,
+    });
+    const normalized = normalizePublishResult(result);
+
+    if (normalized.rejected.length > 0) {
+      throw new Error(`Vault rejected event: ${JSON.stringify(normalized.rejected)}`);
+    }
+
+    console.log(`  Published github_event to ${target}`);
+    console.log(`  Scope: ${scope}`);
+    console.log(`  Accepted events: ${normalized.acceptedEventIds.join(', ') || '(accepted)'}`);
+  } finally {
+    restorePolkadotWarningFilter();
   }
-
-  console.log(`  Published github_event to ${target}`);
-  console.log(`  Scope: ${scope}`);
-  console.log(`  Accepted events: ${normalized.acceptedEventIds.join(', ') || '(accepted)'}`);
 }
 
 async function sendToCentralSender(payload) {
@@ -578,6 +674,7 @@ async function sendToCentralSender(payload) {
 }
 
 async function ensureAgreement(client, context) {
+  const { AgreementAlreadyExistsError } = await import('@cef-ai/client-sdk');
   const scopeContext = {
     workspace_id: context.workspace,
   };
@@ -657,6 +754,7 @@ if (useVaultSender) {
 if (!walletUri) throw new Error('Missing WALLET_URI');
 
 console.log('\n=== Initializing CEF ClientSdk ===');
+const { ClientContext, ClientSdk } = await import('@cef-ai/client-sdk');
 
 const context = new ClientContext({
   agentService,
